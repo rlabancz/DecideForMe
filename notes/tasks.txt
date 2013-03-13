@@ -1,0 +1,5 @@
+Decide for me app
+
+Done:
+- detect finger position and move triangle appropriately
+- random number generator
