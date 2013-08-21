@@ -1,5 +1,11 @@
 Decide for me app
 
+Pending:
+- add triangle (up to 360)
+- delete triangle
+
 Done:
 - detect finger position and move triangle appropriately
 - random number generator
+
+Future revisions:

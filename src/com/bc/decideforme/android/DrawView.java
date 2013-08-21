@@ -1,111 +1,161 @@
 package com.bc.decideforme.android;
 
+import java.util.Vector;
+
+import android.annotation.SuppressLint;
 import android.content.Context;
 import android.graphics.Canvas;
 import android.graphics.Point;
+import android.util.Log;
+import android.view.Display;
 import android.view.MotionEvent;
 import android.view.View;
+import android.view.WindowManager;
 
-public class DrawView extends View
-{
-  private ColorBall[] colorballs = new ColorBall[4]; // array that holds the balls
-  private int balID = 0; // variable to know what ball is being dragged
+public class DrawView extends View {
 
-  public DrawView(Context context)
-  {
-    super(context);
-    setFocusable(true); // necessary for getting the touch events
+	/** The radius of the circle */
+	private int circleRadius;
 
-    // setting the start point for the balls
-    Point point1 = new Point();
-    point1.x = 50;
-    point1.y = 20;
-    Point point2 = new Point();
-    point2.x = 100;
-    point2.y = 20;
-    Point point3 = new Point();
-    point3.x = 150;
-    point3.y = 20;
+	/** The circle's X coordinate */
+	private int circleX;
 
-    // declare each ball with the ColorBall class
-    colorballs[0] = new ColorBall(context, R.drawable.triangle, point1);
-    colorballs[1] = new ColorBall(context, R.drawable.triangle, point2);
-    colorballs[2] = new ColorBall(context, R.drawable.triangle, point3);
-    colorballs[3] = new ColorBall(context, R.drawable.triangle, point3);
+	/** The circle's Y coordinate */
+	private int circleY;
 
-  }
+	/** The X coordinate for 12 O'Clock */
+	private int startPointX;
 
-  // the method that draws the balls
-  @Override
-  protected void onDraw(Canvas canvas)
-  {
-    // canvas.drawColor(0xFFCCCCCC); //if you want another background color
+	/** The Y coordinate for 12 O'Clock */
+	private int startPointY;
 
-    // draw the balls on the canvas
-    for (ColorBall ball : colorballs)
-    {
-      canvas.drawBitmap(ball.getBitmap(), ball.getX(), ball.getY(), null);
-    }
+	public Vector<Pin> pins = new Vector<Pin>();
 
-  }
+	private int pinID = 0; // variable to know what pin is being dragged
+	private int lastPinID = 0; // variable to know what pin is being dragged
+	private static int pinCounter;
 
-  // events when touching the screen
-  public boolean onTouchEvent(MotionEvent event)
-  {
-    int eventaction = event.getAction();
+	public DrawView(Context context) {
+		super(context);
+		pinCounter = 1;
+		pinID = 0;
+		lastPinID = 0;
+		setFocusable(true); // necessary for getting the touch events
+		getScreenSize();
+		createNextPin(context);
+	}
 
-    int X = (int) event.getX();
-    int Y = (int) event.getY();
+	private void createNextPin(Context context) {
+		Point point = new Point();
+		point.x = startPointX;
+		point.y = startPointY;
+		
+		pins.add(new Pin(context, R.drawable.triangle, point, pinCounter));
+		lastPinID = pins.elementAt(pins.size() - 1).getID();
+		pinCounter++;
+	}
 
-    switch (eventaction)
-    {
+	@SuppressLint("NewApi")
+	private void getScreenSize() {
+		WindowManager wm = (WindowManager) this.getContext().getSystemService(
+				Context.WINDOW_SERVICE);
+		Display display = wm.getDefaultDisplay();
+		Point size = new Point();
+		display.getSize(size);
+		int width = size.x;
+		int height = size.y;
 
-      case MotionEvent.ACTION_DOWN: // touch down so check if the finger is on a ball
-        balID = 0;
-        for (ColorBall ball : colorballs)
-        {
-          // check if inside the bounds of the ball (circle)
-          // get the center for the ball
-          int centerX = ball.getX() + 25;
-          int centerY = ball.getY() + 25;
+		calcCircle(height, width);
 
-          // calculate the radius from the touch to the center of the ball
-          double radCircle = Math.sqrt((double) (((centerX - X) * (centerX - X)) + (centerY - Y) * (centerY - Y)));
+	}
 
-          // if the radius is smaller then 23 (radius of a ball is 22), then it must be on the ball
-          if (radCircle < 23)
-          {
-            balID = ball.getID();
-            break;
-          }
+	private void calcCircle(int height, int width) {
+		float maxDiameter = (width > height) ? height : width; // Choose the
+		// smaller
+		float diameter = (float) (maxDiameter * 0.75);
+		circleX = width / 2; // Center X for circle
+		circleY = height / 2; // Center Y for circle
+		circleRadius = (int) (diameter / 2); // Radius of the outer circle
 
-          // check all the bounds of the ball (square)
-          // if (X > ball.getX() && X < ball.getX()+50 && Y > ball.getY() && Y < ball.getY()+50){
-          // balID = ball.getID();
-          // break;
-          // }
-        }
+		startPointX = circleX; // 12 O'clock X coordinate
+		startPointY = circleY - circleRadius;// 12 O'clock Y coordinate
+	}
 
-        break;
+	@Override
+	protected void onMeasure(int widthMeasureSpec, int heightMeasureSpec) {
+		super.onMeasure(widthMeasureSpec, heightMeasureSpec);
+	}
 
-      case MotionEvent.ACTION_MOVE: // touch drag with the ball
-        // move the balls the same as the finger
-        if (balID > 0)
-        {
-          colorballs[balID - 1].setX(X - 25);
-          colorballs[balID - 1].setY(Y - 25);
-        }
+	// the method that draws the pins
+	@Override
+	protected void onDraw(Canvas canvas) {
+		// canvas.drawColor(0xFFCCCCCC); //if you want another background color
+		Log.d("DecideForMe", "ON DRAW: "+ Integer.toString(pinID));
+		
+		// draw the pins on the canvas
+		int pinsLength = pins.size();
+		for (int i = 0; i < pinsLength; i++) {
+			canvas.drawBitmap(pins.elementAt(i).getBitmap(), pins.elementAt(i)
+					.getX(), pins.elementAt(i).getY(), null);
+			// canvas.rotate(i*10);
+		}
+	}
 
-        break;
+	// events when touching the screen
+	public boolean onTouchEvent(MotionEvent event) {
+		int eventaction = event.getAction();
+		((Main) this.getContext()).setTitle("eventaction = " + eventaction);
+		int touchX = (int) event.getX();
+		int touchY = (int) event.getY();
 
-      case MotionEvent.ACTION_UP:
-        // touch drop - just do things here after dropping
+		switch (eventaction) {
 
-        break;
-    }
-    // redraw the canvas
-    invalidate();
-    return true;
+		case MotionEvent.ACTION_DOWN: // touch down so check if the finger is on
+										// a pin
+			pinID = 0;
+			for (Pin pin : pins) {
+				// check if inside the bounds of the pin (circle)
+				// get the center for the pin
+				Log.d("DecideForMe", "ACTION DOWN: "+ Integer.toString(pinID));
+				int pinX = pin.getX() + 25;
+				int pinY = pin.getY() + 25;
 
-  }
+				// calculate the radius from the touch to the center of the pin
+				double radCircle = Math.sqrt((double) (Math.pow(
+						(pinX - touchX), 2) + Math.pow((pinY - touchY), 2)));
+
+				// if the radius is smaller then 23 (radius of a ball is 25),
+				// then it must be on the ball
+				if (radCircle < 23) {
+					pinID = pin.getID();
+					break;
+				}
+			}
+
+			break;
+
+		case MotionEvent.ACTION_MOVE: // touch drag with the ball
+			// move the balls the same as the finger
+			if (pinID > 0) {
+				// pins.elementAt(pinID - 1).setX(touchX-25);
+				// pins.elementAt(pinID - 1).setY(touchY-25);
+				Log.d("DecideForMe", "ACTION MOVE: "+ Integer.toString(pinID));
+				pins.elementAt(pinID - 1).movePin(touchX, touchY, circleX,
+						circleY, circleRadius);
+			}
+			break;
+
+		case MotionEvent.ACTION_UP:
+			// draw the next pin if the last created pin was moved
+			if (pinID == lastPinID) {
+				createNextPin(this.getContext());
+			}
+			break;
+		}
+		// redraw the canvas
+		invalidate();
+		return true;
+
+	}
+
 }
