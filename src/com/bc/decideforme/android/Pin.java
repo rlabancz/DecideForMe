@@ -20,11 +20,13 @@ public class Pin {
 		this.id = id;
 	}
 
-	public Pin(Context context, int drawable, Point point, int id) {
+	public Pin(Context context, Bitmap img, Point point, int id) {
 
-		BitmapFactory.Options opts = new BitmapFactory.Options();
+		/*BitmapFactory.Options opts = new BitmapFactory.Options();
 		opts.inJustDecodeBounds = true;
 		img = BitmapFactory.decodeResource(context.getResources(), drawable);
+		*/
+		this.img =img;
 		coordX = point.x;
 		coordY = point.y;
 		angle = 0;

@@ -4,13 +4,18 @@ import java.util.Vector;
 
 import android.annotation.SuppressLint;
 import android.content.Context;
+import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
 import android.graphics.Canvas;
 import android.graphics.Point;
+import android.graphics.drawable.Drawable;
+import android.graphics.drawable.RotateDrawable;
 import android.util.Log;
 import android.view.Display;
 import android.view.MotionEvent;
 import android.view.View;
 import android.view.WindowManager;
+import android.widget.ImageView;
 
 public class DrawView extends View {
 
@@ -49,8 +54,16 @@ public class DrawView extends View {
 		Point point = new Point();
 		point.x = startPointX;
 		point.y = startPointY;
-		
-		pins.add(new Pin(context, R.drawable.triangle, point, pinCounter));
+
+		Bitmap original = BitmapFactory.decodeResource(getResources(),
+				R.drawable.triangle);
+		Bitmap result = Bitmap.createBitmap(original.getWidth(),
+				original.getHeight(), Bitmap.Config.ARGB_8888);
+		Canvas tempCanvas = new Canvas(result);
+		tempCanvas.rotate(0, original.getWidth() / 2, original.getHeight());
+		tempCanvas.drawBitmap(original, 0, 0, null);
+
+		pins.add(new Pin(context, result, point, pinCounter));
 		lastPinID = pins.elementAt(pins.size() - 1).getID();
 		pinCounter++;
 	}
@@ -90,13 +103,24 @@ public class DrawView extends View {
 	@Override
 	protected void onDraw(Canvas canvas) {
 		// canvas.drawColor(0xFFCCCCCC); //if you want another background color
-		Log.d("DecideForMe", "ON DRAW: "+ Integer.toString(pinID));
-		
+		Log.d("DecideForMe", "ON DRAW: " + Integer.toString(pinID));
+		Bitmap original = null;
+		Bitmap result = null;
+		Canvas tempCanvas = null;
 		// draw the pins on the canvas
 		int pinsLength = pins.size();
 		for (int i = 0; i < pinsLength; i++) {
-			canvas.drawBitmap(pins.elementAt(i).getBitmap(), pins.elementAt(i)
-					.getX(), pins.elementAt(i).getY(), null);
+
+			original = pins.elementAt(i).getBitmap();
+			result = Bitmap.createBitmap(original.getWidth(),
+					original.getHeight(), Bitmap.Config.ARGB_8888);
+			tempCanvas = new Canvas(result);
+			tempCanvas
+					.rotate(45, original.getWidth() / 4, original.getHeight()/4);
+			tempCanvas.drawBitmap(original, 0, 0, null);
+
+			canvas.drawBitmap(result, pins.elementAt(i).getX(),
+					pins.elementAt(i).getY(), null);
 			// canvas.rotate(i*10);
 		}
 	}
@@ -116,7 +140,7 @@ public class DrawView extends View {
 			for (Pin pin : pins) {
 				// check if inside the bounds of the pin (circle)
 				// get the center for the pin
-				Log.d("DecideForMe", "ACTION DOWN: "+ Integer.toString(pinID));
+				Log.d("DecideForMe", "ACTION DOWN: " + Integer.toString(pinID));
 				int pinX = pin.getX() + 25;
 				int pinY = pin.getY() + 25;
 
@@ -139,7 +163,7 @@ public class DrawView extends View {
 			if (pinID > 0) {
 				// pins.elementAt(pinID - 1).setX(touchX-25);
 				// pins.elementAt(pinID - 1).setY(touchY-25);
-				Log.d("DecideForMe", "ACTION MOVE: "+ Integer.toString(pinID));
+				Log.d("DecideForMe", "ACTION MOVE: " + Integer.toString(pinID));
 				pins.elementAt(pinID - 1).movePin(touchX, touchY, circleX,
 						circleY, circleRadius);
 			}
